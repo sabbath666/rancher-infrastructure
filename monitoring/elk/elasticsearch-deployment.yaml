@@ -1,0 +1,78 @@
+---
+kind: Deployment
+apiVersion: extensions/v1beta1
+metadata:
+  namespace: monitoring-tick
+  name: elasticsearch
+spec:
+  replicas: 1
+  template:
+    metadata:
+      labels:
+        app: elasticsearch
+    spec:
+      containers:
+      - name: elasticsearch
+        image: repodev.cib.ru:8082/elasticsearch:7.6.0
+#        imagePullPolicy: Always
+        env:
+          - name: 'ES_JAVA_OPTS'
+            value: '-Xms2g -Xmx4g'
+          - name: 'discovery.type'
+            value: 'single-node'
+          - name: 'xpack.security.enabled'
+            value: 'false'
+          - name: 'http.host'
+            value: '0.0.0.0'
+          - name: 'http.host'
+            value: '0.0.0.0'
+          - name: 'bootstrap.memory_lock'
+            value: 'true'
+#          - name: 'ulimit_memlock'
+#            value: '-1:-1'
+        volumeMounts:
+          - name: elasticsearch-conf
+            mountPath: /usr/share/elasticsearch/config/elasticsearch.yml
+            subPath: elasticsearch.yml
+          - name: elasticsearch-data
+            mountPath: /usr/share/elasticsearch/data
+      volumes:
+        - name: elasticsearch-conf
+          configMap:
+            name: elasticsearch-conf
+        - name: elasticsearch-data
+          hostPath:
+            path: /opt/tick/elasticsearch/data
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch
+  namespace: monitoring-tick
+spec:
+  selector:
+    app: elasticsearch
+  ports:
+    - name: port1
+      port: 9200
+      targetPort: 9200
+    - name: port2
+      port: 9300
+      targetPort: 9300
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: elasticsearch-nodeport
+  namespace: monitoring-tick
+spec:
+  type: NodePort
+  selector:
+    app: elasticsearch
+  ports:
+    - port: 9200
+      nodePort: 32030
+
+
+
+
